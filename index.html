@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LionTube</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a2e;
+    --surface2: #16213e;
+    --accent: #e94560;
+    --accent-hover: #ff6b81;
+    --text: #eee;
+    --text-dim: #999;
+    --radius: 12px;
+    --focus: #4fc3f7;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+  }
+
+  header {
+    text-align: center;
+    padding: 24px 16px 8px;
+  }
+  header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #ff9a56);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header .mode-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    background: var(--surface);
+    padding: 2px 10px;
+    border-radius: 99px;
+    margin-top: 4px;
+    color: var(--text-dim);
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Player */
+  #player-wrap {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    background: #000;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  #player-wrap iframe, #player-wrap #yt-player {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+  #player-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+  }
+
+  /* Add form (parent only) */
+  #add-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  #add-section h2 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .add-row input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .add-row input:focus {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+  #bulk-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    min-height: 60px;
+    resize: vertical;
+    font-family: inherit;
+    display: none;
+  }
+  #bulk-input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .toggle-bulk {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+  .toggle-bulk:hover { color: var(--accent-hover); }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    padding: 12px 18px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  /* Video list */
+  #video-list {
+    list-style: none;
+  }
+  #video-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    transition: background 0.15s;
+  }
+  #video-list li:hover, #video-list li:focus-within {
+    background: var(--surface2);
+  }
+  #video-list li.active {
+    border-left: 4px solid var(--accent);
+  }
+  .vid-title {
+    flex: 1;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 6px;
+    font-size: 1rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    word-break: break-word;
+  }
+  .vid-title:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .vid-actions button {
+    background: transparent;
+    color: var(--text-dim);
+    padding: 8px;
+    font-size: 1.1rem;
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .vid-actions button:hover { color: var(--text); }
+  .vid-actions .del-btn:hover { color: var(--accent); }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 40px 16px;
+    font-size: 1.05rem;
+  }
+
+  /* Kid mode tweaks */
+  body.kid-mode .vid-title {
+    font-size: 1.2rem;
+    padding: 10px 8px;
+    min-height: 56px;
+  }
+  body.kid-mode #video-list li {
+    padding: 16px 14px;
+    margin-bottom: 10px;
+  }
+
+  /* Mode switch link */
+  .mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid #333;
+    border-radius: 99px;
+    padding: 6px 16px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .mode-toggle:hover { background: var(--surface2); color: var(--text); }
+  .mode-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .mode-toggle .toggle-track {
+    width: 36px; height: 20px;
+    background: #333;
+    border-radius: 99px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .mode-toggle .toggle-knob {
+    width: 16px; height: 16px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .mode-toggle.kid .toggle-track { background: var(--accent); }
+  .mode-toggle.kid .toggle-knob { transform: translateX(16px); background: #fff; }
+
+  .mode-link {
+    display: none;
+  }
+
+  @media (max-width: 500px) {
+    .add-row { flex-direction: column; }
+    .add-row input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🦁 LionTube</h1>
+  <button class="mode-toggle" id="mode-toggle" aria-label="Toggle parent/kid mode">
+    <span>Parent</span>
+    <span class="toggle-track"><span class="toggle-knob"></span></span>
+    <span>Kid</span>
+  </button>
+</header>
+
+<div class="container">
+  <div id="player-wrap">
+    <div id="yt-player"></div>
+    <div id="player-placeholder">Pick a video to play 🎬</div>
+  </div>
+
+  <div id="add-section" style="display:none">
+    <h2>Add Videos</h2>
+    <div class="add-row">
+      <input type="text" id="url-input" placeholder="YouTube URL or video ID" aria-label="YouTube URL or video ID">
+      <input type="text" id="label-input" placeholder="Label (optional)" aria-label="Label" style="max-width:200px">
+      <button class="btn-primary" id="add-btn">Add</button>
+    </div>
+    <button class="toggle-bulk" id="toggle-bulk">+ Bulk add</button>
+    <textarea id="bulk-input" placeholder="Paste multiple URLs or IDs, one per line or comma-separated" aria-label="Bulk add videos"></textarea>
+    <button class="btn-primary" id="bulk-add-btn" style="display:none;margin-top:8px">Add All</button>
+  </div>
+
+  <ul id="video-list" role="list" aria-label="Video playlist" tabindex="-1"></ul>
+
+  <div class="mode-link" id="mode-link"></div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'liontube_videos';
+  const params = new URLSearchParams(location.search);
+  const isKid = params.get('mode') === 'kid';
+
+  let kidMode = isKid;
+
+  function applyMode() {
+    const toggle = document.getElementById('mode-toggle');
+    if (kidMode) {
+      document.body.classList.add('kid-mode');
+      toggle.classList.add('kid');
+      document.getElementById('add-section').style.display = 'none';
+    } else {
+      document.body.classList.remove('kid-mode');
+      toggle.classList.remove('kid');
+      document.getElementById('add-section').style.display = '';
+    }
+    renderList();
+  }
+
+  document.getElementById('mode-toggle').addEventListener('click', function() {
+    kidMode = !kidMode;
+    // Update URL without reload
+    const url = new URL(location);
+    if (kidMode) url.searchParams.set('mode', 'kid');
+    else url.searchParams.delete('mode');
+    history.replaceState(null, '', url);
+    applyMode();
+  });
+
+  // Data
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+  function save(vids) { localStorage.setItem(STORAGE_KEY, JSON.stringify(vids)); }
+
+  // Parse YouTube ID
+  function parseId(input) {
+    input = input.trim();
+    if (!input) return null;
+    let m;
+    if ((m = input.match(/(?:youtube\.com\/(?:watch\?.*v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/))) return m[1];
+    if (/^[\w-]{11}$/.test(input)) return input;
+    return null;
+  }
+
+  // YouTube Player API
+  let player = null;
+  let currentId = null;
+
+  window.onYouTubeIframeAPIReady = function() {};
+
+  function playVideo(videoId) {
+    currentId = videoId;
+    document.getElementById('player-placeholder').style.display = 'none';
+    if (player) {
+      player.loadVideoById(videoId);
+      player.stopVideo(); // don't autoplay
+    } else {
+      player = new YT.Player('yt-player', {
+        videoId: videoId,
+        playerVars: {
+          autoplay: 0,
+          rel: 0,
+          modestbranding: 1,
+          origin: location.origin
+        }
+      });
+    }
+    renderList();
+  }
+
+  // Load YT API
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+
+  // Render
+  const listEl = document.getElementById('video-list');
+
+  function renderList() {
+    const vids = load();
+    if (!vids.length) {
+      listEl.innerHTML = '<div class="empty-msg">No videos yet' + (kidMode ? '' : ' — add some above!') + '</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    vids.forEach(function(v, i) {
+      const li = document.createElement('li');
+      if (v.id === currentId) li.classList.add('active');
+
+      const title = document.createElement('span');
+      title.className = 'vid-title';
+      title.textContent = v.label || v.id;
+      title.tabIndex = 0;
+      title.role = 'button';
+      title.setAttribute('aria-label', 'Play ' + (v.label || v.id));
+      title.addEventListener('click', function() { playVideo(v.id); });
+      title.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playVideo(v.id); }
+      });
+      li.appendChild(title);
+
+      if (!kidMode) {
+        const actions = document.createElement('span');
+        actions.className = 'vid-actions';
+        if (i > 0) {
+          const up = document.createElement('button');
+          up.innerHTML = '↑';
+          up.title = 'Move up';
+          up.setAttribute('aria-label', 'Move up');
+          up.addEventListener('click', function() { const a = load(); [a[i-1],a[i]]=[a[i],a[i-1]]; save(a); renderList(); });
+          actions.appendChild(up);
+        }
+        if (i < vids.length - 1) {
+          const dn = document.createElement('button');
+          dn.innerHTML = '↓';
+          dn.title = 'Move down';
+          dn.setAttribute('aria-label', 'Move down');
+          dn.addEventListener('click', function() { const a = load(); [a[i],a[i+1]]=[a[i+1],a[i]]; save(a); renderList(); });
+          actions.appendChild(dn);
+        }
+        const del = document.createElement('button');
+        del.className = 'del-btn';
+        del.innerHTML = '✕';
+        del.title = 'Remove';
+        del.setAttribute('aria-label', 'Remove');
+        del.addEventListener('click', function() { const a = load(); a.splice(i,1); save(a); renderList(); });
+        actions.appendChild(del);
+        li.appendChild(actions);
+      }
+      listEl.appendChild(li);
+    });
+  }
+
+  // Add single
+  document.getElementById('add-btn').addEventListener('click', addSingle);
+  document.getElementById('url-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addSingle();
+  });
+
+  function addSingle() {
+      const id = parseId(document.getElementById('url-input').value);
+      if (!id) return alert('Could not parse a YouTube video ID');
+      const label = document.getElementById('label-input').value.trim();
+      const vids = load();
+      vids.push({ id: id, label: label || '' });
+      save(vids);
+      document.getElementById('url-input').value = '';
+      document.getElementById('label-input').value = '';
+      renderList();
+    }
+
+  // Bulk
+  const bulkInput = document.getElementById('bulk-input');
+  const bulkBtn = document.getElementById('bulk-add-btn');
+  document.getElementById('toggle-bulk').addEventListener('click', function() {
+    const show = bulkInput.style.display === 'none';
+    bulkInput.style.display = show ? '' : 'none';
+    bulkBtn.style.display = show ? '' : 'none';
+  });
+  bulkBtn.addEventListener('click', function() {
+    const raw = bulkInput.value;
+    const items = raw.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+    const vids = load();
+    let added = 0;
+    items.forEach(function(s) {
+      const id = parseId(s);
+      if (id) { vids.push({ id: id, label: '' }); added++; }
+    });
+    save(vids);
+    bulkInput.value = '';
+    renderList();
+    if (added) alert('Added ' + added + ' video(s)');
+  });
+
+  // Keyboard nav on list
+  listEl.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const items = listEl.querySelectorAll('.vid-title');
+      if (!items.length) return;
+      const idx = Array.from(items).indexOf(document.activeElement);
+      let next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+      if (next < 0) next = items.length - 1;
+      if (next >= items.length) next = 0;
+      items[next].focus();
+      e.preventDefault();
+    }
+  });
+
+  applyMode();
+})();
+</script>
+</body>
+</html>
