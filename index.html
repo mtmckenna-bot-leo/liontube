@@ -333,12 +333,12 @@
     currentId = videoId;
     document.getElementById('player-placeholder').style.display = 'none';
     if (player) {
-      player.loadVideoById(videoId);
+      player.cueVideoById(videoId);
     } else {
       player = new YT.Player('yt-player', {
         videoId: videoId,
         playerVars: {
-          autoplay: 1,
+          autoplay: 0,
           rel: 0,
           modestbranding: 1,
           origin: location.origin
