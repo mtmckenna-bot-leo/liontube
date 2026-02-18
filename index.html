@@ -445,16 +445,33 @@
     if (e.key === 'Enter') addSingle();
   });
 
+  function fetchTitle(videoId) {
+    return fetch('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) { return d ? d.title : null; })
+      .catch(function() { return null; });
+  }
+
   function addSingle() {
       const id = parseId(document.getElementById('url-input').value);
       if (!id) return alert('Could not parse a YouTube video ID');
       const label = document.getElementById('label-input').value.trim();
       const vids = load();
-      vids.push({ id: id, label: label || '' });
+      vids.push({ id: id, label: label || id });
       save(vids);
       document.getElementById('url-input').value = '';
       document.getElementById('label-input').value = '';
       renderList();
+      // Auto-fetch title if no label provided
+      if (!label) {
+        fetchTitle(id).then(function(title) {
+          if (title) {
+            const v = load();
+            var found = v.find(function(x) { return x.id === id && x.label === id; });
+            if (found) { found.label = title; save(v); renderList(); }
+          }
+        });
+      }
     }
 
   // Bulk
@@ -470,14 +487,24 @@
     const items = raw.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
     const vids = load();
     let added = 0;
+    var newIds = [];
     items.forEach(function(s) {
       const id = parseId(s);
-      if (id) { vids.push({ id: id, label: '' }); added++; }
+      if (id) { vids.push({ id: id, label: id }); newIds.push(id); added++; }
     });
     save(vids);
     bulkInput.value = '';
     renderList();
     if (added) alert('Added ' + added + ' video(s)');
+    newIds.forEach(function(vid) {
+      fetchTitle(vid).then(function(title) {
+        if (title) {
+          var v = load();
+          var found = v.find(function(x) { return x.id === vid && x.label === vid; });
+          if (found) { found.label = title; save(v); renderList(); }
+        }
+      });
+    });
   });
 
   // Keyboard nav on list
@@ -493,6 +520,22 @@
       e.preventDefault();
     }
   });
+
+  // Auto-fetch titles for any videos with missing/ID-only labels
+  (function fixLabels() {
+    var vids = load();
+    vids.forEach(function(v) {
+      if (!v.label || /^[\w-]{11}$/.test(v.label)) {
+        fetchTitle(v.id).then(function(title) {
+          if (title) {
+            var cur = load();
+            var found = cur.find(function(x) { return x.id === v.id && (!x.label || /^[\w-]{11}$/.test(x.label)); });
+            if (found) { found.label = title; save(cur); renderList(); }
+          }
+        });
+      }
+    });
+  })();
 
   applyMode();
 })();
