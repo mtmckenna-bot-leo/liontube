@@ -334,12 +334,11 @@
     document.getElementById('player-placeholder').style.display = 'none';
     if (player) {
       player.loadVideoById(videoId);
-      player.stopVideo(); // don't autoplay
     } else {
       player = new YT.Player('yt-player', {
         videoId: videoId,
         playerVars: {
-          autoplay: 0,
+          autoplay: 1,
           rel: 0,
           modestbranding: 1,
           origin: location.origin
