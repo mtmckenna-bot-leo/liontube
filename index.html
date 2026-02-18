@@ -110,29 +110,6 @@
     outline: 2px solid var(--focus);
     outline-offset: 1px;
   }
-  #bulk-input {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 8px;
-    border: 1px solid #333;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 0.95rem;
-    min-height: 60px;
-    resize: vertical;
-    font-family: inherit;
-    display: none;
-  }
-  #bulk-input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
-  .toggle-bulk {
-    background: none;
-    border: none;
-    color: var(--accent);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 4px 0;
-  }
-  .toggle-bulk:hover { color: var(--accent-hover); }
 
   button {
     cursor: pointer;
@@ -290,9 +267,6 @@
       <input type="text" id="label-input" placeholder="Label (optional)" aria-label="Label" style="max-width:200px">
       <button class="btn-primary" id="add-btn">Add</button>
     </div>
-    <button class="toggle-bulk" id="toggle-bulk">+ Bulk add</button>
-    <textarea id="bulk-input" placeholder="Paste multiple URLs or IDs, one per line or comma-separated" aria-label="Bulk add videos"></textarea>
-    <button class="btn-primary" id="bulk-add-btn" style="display:none;margin-top:8px">Add All</button>
   </div>
 
   <ul id="video-list" role="list" aria-label="Video playlist" tabindex="-1"></ul>
@@ -472,39 +446,6 @@
         });
       }
     }
-
-  // Bulk
-  const bulkInput = document.getElementById('bulk-input');
-  const bulkBtn = document.getElementById('bulk-add-btn');
-  document.getElementById('toggle-bulk').addEventListener('click', function() {
-    const show = bulkInput.style.display === 'none';
-    bulkInput.style.display = show ? '' : 'none';
-    bulkBtn.style.display = show ? '' : 'none';
-  });
-  bulkBtn.addEventListener('click', function() {
-    const raw = bulkInput.value;
-    const items = raw.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
-    const vids = load();
-    let added = 0;
-    var newIds = [];
-    items.forEach(function(s) {
-      const id = parseId(s);
-      if (id) { vids.push({ id: id, label: id }); newIds.push(id); added++; }
-    });
-    save(vids);
-    bulkInput.value = '';
-    renderList();
-    if (added) alert('Added ' + added + ' video(s)');
-    newIds.forEach(function(vid) {
-      fetchTitle(vid).then(function(title) {
-        if (title) {
-          var v = load();
-          var found = v.find(function(x) { return x.id === vid && x.label === vid; });
-          if (found) { found.label = title; save(v); renderList(); }
-        }
-      });
-    });
-  });
 
   // Keyboard nav on list
   listEl.addEventListener('keydown', function(e) {
